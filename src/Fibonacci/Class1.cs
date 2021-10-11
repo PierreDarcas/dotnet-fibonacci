@@ -15,12 +15,16 @@ namespace Fibonacci
     }
     public class Compute
     {
-
-        public static async Task<List<long>> ExecuteAsync(string[] arguments)
+        private readonly FibonacciDataContext _fibonacciDataContext;
+        public Compute(FibonacciDataContext fibonacciDataContext)
         {
-            using var dataContext = new FibonacciDataContext();
-            var results = await RunFibonaccisAsync(dataContext, arguments);
-            await dataContext.SaveChangesAsync();
+            _fibonacciDataContext = fibonacciDataContext;
+        }
+        public async Task<List<long>> ExecuteAsync(string[] arguments)
+        {
+            // using var dataContext = new FibonacciDataContext();
+            var results = await RunFibonaccisAsync(_fibonacciDataContext, arguments);
+            await _fibonacciDataContext.SaveChangesAsync();
             return results;
         }
         

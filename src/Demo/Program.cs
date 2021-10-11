@@ -25,6 +25,7 @@ Stopwatch stopwatch = new Stopwatch();
 stopwatch.Start();
 
 
+
 // string[] numbers = args;
 // foreach (string i in numbers)
 // {
@@ -36,7 +37,9 @@ stopwatch.Start();
 //     }
 // }
 
-var tasks = await Fibonacci.Compute.ExecuteAsync(args);
+using var fibonacciDataContext = new FibonacciDataContext();
+
+var tasks = await new Fibonacci.Compute(fibonacciDataContext).ExecuteAsync(args);
 
 foreach (var task in tasks)
 {
