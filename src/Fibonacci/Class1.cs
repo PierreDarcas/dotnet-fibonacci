@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fibonacci
 {
@@ -11,46 +13,56 @@ namespace Fibonacci
             return 1;
         }
     }
-
     public class Compute
     {
 
-            public static async Task<List<int>> ExecuteAsync(string[] arguments)
-            {
-                var results = new List<int>();
-
-                var tasks = RunFibonaccis(arguments);
-
-                foreach (var task in tasks)
-                {
-                    var resultAwaited = await task;
-                    results.Add(resultAwaited);
-                }
-
-                return results;
-            }
-            
-            private static List<Task<int>>? RunFibonaccis(string[] args)
-            {
-                static int Fib(int i) =>
-                    i switch
-                    {
-                        int when i <= 2 => 1,
-                        _ => Fib(i - 2) + Fib(i - 1)
-                    };
-
-                var list = new List<Task<int>>();
-                foreach (var input in args)
-                {
-                    var task = Task.Run(() => Fib(int.Parse(args[0])));
-                    list.Add(task);
-                }
-
-                return list;
-            }
-
+        public static async Task<List<long>> ExecuteAsync(string[] arguments)
+        {
+            using var dataContext = new FibonacciDataContext();
+            var results = await RunFibonaccisAsync(dataContext, arguments);
+            await dataContext.SaveChangesAsync();
+            return results;
         }
-    
+        
+        private static long Fib(int i) =>
+            i switch
+            {
+                int when i <= 2 => 1,
+                _ =>  Fib(i - 2) + Fib(i - 1)
+            };
+        
+        private static async Task<List<long>> RunFibonaccisAsync(FibonacciDataContext dataContext ,string[] strings)
+        {
+            var list = new List<long>();
+            foreach (var input in strings)
+            {
+                var inputInt = Convert.ToInt32(input);
+                var fibonacciFromDatabase =
+                    await dataContext
+                        .TFibonaccis
+                        .Where(tf => tf.FibInput == inputInt)
+                        .FirstOrDefaultAsync();
+
+                if (fibonacciFromDatabase != null)
+                {
+                    list.Add(fibonacciFromDatabase.FibOutput);
+                }
+                else
+                {
+                    var fibOutput = await Task.Run(() => Fib(inputInt));
+
+                    dataContext.TFibonaccis.Add(new TFibonacci()
+                    {
+                        FibInput = inputInt,
+                        FibOutput = fibOutput,
+                        FibCreatedTimestamp = DateTime.Now
+                    });
+                    list.Add(fibOutput);
+                }
+                
+            }
+
+            return list;
+        }
+    }
 }
-
-
